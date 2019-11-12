@@ -12,6 +12,9 @@ String currency = "USD";
 //For RaspiBlitz
 String readmacaroon = "Raspiblitz Read-Only Macaroon";
 String invoicemacaroon = "Raspiblitz Invoice Macaroon";
+const char*  server = "Raspiblitz URL"; 
+const int httpsPort = 443;
+const int lndport = 8080;
 const char* test_root_fingerprint = "SSL Fingerprint";
 
 void setup() {
@@ -90,9 +93,7 @@ void raspiBlitzInvoice() {
   String amount = ez.textInput();
 
   //BLITZ DETAILS
-const char*  server = "liab1.mooo.com"; 
-const int httpsPort = 443;
-const int lndport = 8080;
+
 
 String on_currency = "BTCUSD"; //currency can be changed here ie BTCUSD BTCGBP etc
 String on_sub_currency = on_currency.substring(3);
