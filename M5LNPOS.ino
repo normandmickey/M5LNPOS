@@ -10,12 +10,12 @@ String ONApiKey = "OpenNode API Key";
 String currency = "USD";
 
 //For RaspiBlitz
-String readmacaroon = "Raspiblitz Read-Only Macaroon";
+String readmacaroon = "Raspiblitz Read Only Macaroon";
 String invoicemacaroon = "Raspiblitz Invoice Macaroon";
-const char*  server = "Raspiblitz URL"; 
-const int httpsPort = 443;
-const int lndport = 8080;
-const char* test_root_fingerprint = "SSL Fingerprint";
+const char* test_root_fingerprint = "Raspiblitz SSL Fingerprint";
+String blitzServer = "Raspiblitz Server"; 
+const int blitzHttpsPort = 443;
+const int blitzLndPort = 8080;
 
 void setup() {
   ez.begin();
@@ -82,50 +82,16 @@ void ONInvoice() {
 
   ez.screen.clear();
   M5.begin();
-  M5.Lcd.qrcode(lnInvoice,45,0,240,10);
+  M5.Lcd.qrcode(lnInvoice);
   delay(60000);
   checkONInvoiceStatus(invoiceId);
   }
   client.end();
 }
 
-void raspiBlitzInvoice() {
-  String amount = ez.textInput();
-
-  //BLITZ DETAILS
-
-
-String on_currency = "BTCUSD"; //currency can be changed here ie BTCUSD BTCGBP etc
-String on_sub_currency = on_currency.substring(3);
-String memo = "Memo "; //memo suffix, followed by the price then a random number
-    
-  HTTPClient client;
-  client.begin("https://liab1.mooo.com:8080/v1/invoices", test_root_fingerprint);
-  client.addHeader("Content-Type", "application/json");
-  client.addHeader("Grpc-Metadata-macaroon", invoicemacaroon);
-  String jsonPost = "{\"value\":\"10\",\"memo\":\"memo2\",\"expiry\":\"1000\"}";
-  int httpCode = client.POST(jsonPost);
-  if (httpCode >0) {  
-    const size_t capacity = JSON_OBJECT_SIZE(3) + 320;
-  DynamicJsonDocument doc(capacity);  
-  deserializeJson(doc, client.getString());
-   
-  const char* payment_request = doc["payment_request"];
-  String payreq = payment_request;
-  Serial.println(payreq);
-  
-  ez.screen.clear();
-  M5.begin();
-  M5.Lcd.qrcode(payreq,45,0,240,10);
-  delay(20000);
-  }
-  client.end();
-}
-
-
 void checkONInvoiceStatus(String invoiceId) {
   delay (3000);
-  for (int x = 0; x < 720; x++) {
+  for (int x = 0; x < 12; x++) {
   HTTPClient client;
   String invoiceURL = "https://api.opennode.co/v1/charge/" + invoiceId;
   client.begin(invoiceURL);
@@ -140,9 +106,88 @@ void checkONInvoiceStatus(String invoiceId) {
   JsonObject data = doc["data"];
   client.end();
   //ez.msgBox("", data["status"]);
-  if (data["status"] == "pao75432id") { ez.msgBox("", "Payment Complete");
+  if (data["status"] == "paid") { ez.msgBox("", "Payment Complete");
   break; }
   }
   delay(5000);
  }
+}
+
+void raspiBlitzInvoice() {
+  String amount = ez.textInput();
+
+  //BLITZ DETAILS
+String on_currency = "BTCUSD"; //currency can be changed here ie BTCUSD BTCGBP etc
+String on_sub_currency = on_currency.substring(3);
+String memo = "Memo "; //memo suffix, followed by the price then a random number
+    
+  HTTPClient client;
+  String invoiceURL = "https://" + blitzServer + ":8080/v1/invoices";
+  client.begin(invoiceURL, test_root_fingerprint);
+  client.addHeader("Content-Type", "application/json");
+  client.addHeader("Grpc-Metadata-macaroon", invoicemacaroon);
+  String jsonPost = "{\"value\":\"" + amount + "\",\"memo\":\"memo2\",\"expiry\":\"1000\"}";
+  int httpCode = client.POST(jsonPost);
+  if (httpCode >0) {  
+    const size_t capacity = JSON_OBJECT_SIZE(3) + 320;
+  DynamicJsonDocument doc(capacity);  
+  deserializeJson(doc, client.getString());
+   
+  const char* payment_request = doc["payment_request"];
+  String payreq = payment_request;
+  Serial.println(payreq);
+  //const char* r_hash = doc["r_hash"];
+  //String rhash = r_hash;
+  //Serial.println(rhash);
+  
+  ez.screen.clear();
+  M5.begin();
+  M5.Lcd.qrcode(payreq,45,0,240,10);
+  delay(20000);
+  checkBlitzInvoiceStatus(payreq);
+  }
+  client.end();
+}
+
+void checkBlitzInvoiceStatus(String invoiceId) {
+  String paymentHash = getHash(invoiceId);
+  Serial.println(paymentHash);
+  delay (3000);
+  for (int x = 0; x < 12; x++) {
+  HTTPClient client;
+  String invoiceURL = "https://" + blitzServer + ":8080/v1/invoice/" + paymentHash;
+  client.begin(invoiceURL, test_root_fingerprint);
+  client.addHeader("Content-Type", "application/json");
+  client.addHeader("Grpc-Metadata-macaroon", readmacaroon);
+  int httpCode = client.GET();
+  if (httpCode >0) {
+  const size_t capacity = JSON_OBJECT_SIZE(16) + 580;  
+  DynamicJsonDocument doc(capacity);
+  
+  deserializeJson(doc, client.getString());
+  client.end();
+  //ez.msgBox("", doc["state"]);
+  if (doc["state"] == "SETTLED") { ez.msgBox("", "Payment Complete");
+  break; }
+  }
+  delay(5000);
+ }
+}
+
+String getHash(String invoiceId) {
+  HTTPClient client;
+  String invoiceURL = "https://" + blitzServer + ":8080/v1/payreq/" + invoiceId;
+  //String invoiceURL = "https://liab1.mooo.com:8080/v1/payreq/lnbc50n1pwulac4pp5z3e6q7y9w7uphrs40w099f694hsjq4aavj44h80lkagtnhsrg3rqdqgd4jk6mejcqzpgxqzlgff02uf3wcel6w7l84zervgl6883aeg3t4h6fww38yz006gs6duv4twjjt9652sapg878usjngn8cyc7wzhdfxvk4yehfgppqcyu8x5gqtq6uwm";
+  client.begin(invoiceURL, test_root_fingerprint);
+  client.addHeader("Content-Type", "application/json");
+  client.addHeader("Grpc-Metadata-macaroon", readmacaroon);
+  const size_t capacity = JSON_OBJECT_SIZE(7) + 270;
+  DynamicJsonDocument doc(capacity);
+  int httpCode = client.GET();
+  deserializeJson(doc, client.getString());
+  String blitzPaymentHash = doc["payment_hash"];
+  //Serial.println(httpCode);
+  //Serial.println(blitzPaymentHash);
+  return blitzPaymentHash;
+  client.end();
 }
