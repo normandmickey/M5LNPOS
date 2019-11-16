@@ -105,7 +105,6 @@ void checkONInvoiceStatus(String invoiceId) {
   deserializeJson(doc, client.getString());
   JsonObject data = doc["data"];
   client.end();
-  //ez.msgBox("", data["status"]);
   if (data["status"] == "paid") { ez.msgBox("", "Payment Complete");
   break; }
   }
@@ -117,9 +116,9 @@ void raspiBlitzInvoice() {
   String amount = ez.textInput();
 
   //BLITZ DETAILS
-String on_currency = "BTCUSD"; //currency can be changed here ie BTCUSD BTCGBP etc
-String on_sub_currency = on_currency.substring(3);
-String memo = "Memo "; //memo suffix, followed by the price then a random number
+  String on_currency = "BTCUSD"; //currency can be changed here ie BTCUSD BTCGBP etc
+  String on_sub_currency = on_currency.substring(3);
+  String memo = "Memo "; //memo suffix, followed by the price then a random number
     
   HTTPClient client;
   String invoiceURL = "https://" + blitzServer + ":8080/v1/invoices";
@@ -135,11 +134,7 @@ String memo = "Memo "; //memo suffix, followed by the price then a random number
    
   const char* payment_request = doc["payment_request"];
   String payreq = payment_request;
-  Serial.println(payreq);
-  //const char* r_hash = doc["r_hash"];
-  //String rhash = r_hash;
-  //Serial.println(rhash);
-  
+  Serial.println(payreq);  
   ez.screen.clear();
   M5.begin();
   M5.Lcd.qrcode(payreq,45,0,240,10);
@@ -166,7 +161,6 @@ void checkBlitzInvoiceStatus(String invoiceId) {
   
   deserializeJson(doc, client.getString());
   client.end();
-  //ez.msgBox("", doc["state"]);
   if (doc["state"] == "SETTLED") { ez.msgBox("", "Payment Complete");
   break; }
   }
@@ -177,7 +171,6 @@ void checkBlitzInvoiceStatus(String invoiceId) {
 String getHash(String invoiceId) {
   HTTPClient client;
   String invoiceURL = "https://" + blitzServer + ":8080/v1/payreq/" + invoiceId;
-  //String invoiceURL = "https://liab1.mooo.com:8080/v1/payreq/lnbc50n1pwulac4pp5z3e6q7y9w7uphrs40w099f694hsjq4aavj44h80lkagtnhsrg3rqdqgd4jk6mejcqzpgxqzlgff02uf3wcel6w7l84zervgl6883aeg3t4h6fww38yz006gs6duv4twjjt9652sapg878usjngn8cyc7wzhdfxvk4yehfgppqcyu8x5gqtq6uwm";
   client.begin(invoiceURL, test_root_fingerprint);
   client.addHeader("Content-Type", "application/json");
   client.addHeader("Grpc-Metadata-macaroon", readmacaroon);
@@ -186,8 +179,6 @@ String getHash(String invoiceId) {
   int httpCode = client.GET();
   deserializeJson(doc, client.getString());
   String blitzPaymentHash = doc["payment_hash"];
-  //Serial.println(httpCode);
-  //Serial.println(blitzPaymentHash);
   return blitzPaymentHash;
   client.end();
 }
