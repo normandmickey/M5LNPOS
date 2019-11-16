@@ -13,9 +13,7 @@ String currency = "USD";
 String readmacaroon = "Raspiblitz Read Only Macaroon";
 String invoicemacaroon = "Raspiblitz Invoice Macaroon";
 const char* test_root_fingerprint = "Raspiblitz SSL Fingerprint";
-String blitzServer = "Raspiblitz Server"; 
-const int blitzHttpsPort = 443;
-const int blitzLndPort = 8080;
+String blitzServer = "Raspiblitz URL"; 
 
 void setup() {
   ez.begin();
@@ -114,18 +112,14 @@ void checkONInvoiceStatus(String invoiceId) {
 
 void raspiBlitzInvoice() {
   String amount = ez.textInput();
-
-  //BLITZ DETAILS
-  String on_currency = "BTCUSD"; //currency can be changed here ie BTCUSD BTCGBP etc
-  String on_sub_currency = on_currency.substring(3);
-  String memo = "Memo "; //memo suffix, followed by the price then a random number
+  String memo = "Memo " + String(random(1,1000)); //memo suffix, followed by the price then a random number
     
   HTTPClient client;
   String invoiceURL = "https://" + blitzServer + ":8080/v1/invoices";
   client.begin(invoiceURL, test_root_fingerprint);
   client.addHeader("Content-Type", "application/json");
   client.addHeader("Grpc-Metadata-macaroon", invoicemacaroon);
-  String jsonPost = "{\"value\":\"" + amount + "\",\"memo\":\"memo2\",\"expiry\":\"1000\"}";
+  String jsonPost = "{\"value\":\"" + amount + "\",\"memo\":" + "\"" + memo + "\"" + ",\"expiry\":\"1000\"}";
   int httpCode = client.POST(jsonPost);
   if (httpCode >0) {  
     const size_t capacity = JSON_OBJECT_SIZE(3) + 320;
@@ -134,7 +128,8 @@ void raspiBlitzInvoice() {
    
   const char* payment_request = doc["payment_request"];
   String payreq = payment_request;
-  Serial.println(payreq);  
+  Serial.println(payreq);
+  
   ez.screen.clear();
   M5.begin();
   M5.Lcd.qrcode(payreq,45,0,240,10);
