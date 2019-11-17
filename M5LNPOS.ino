@@ -6,7 +6,7 @@
 #include <math.h>
 
 // For OpenNode
-String ONApiKey = "046ef527-db76-47da-ab5b-b3ce2e64996c";
+String ONApiKey = "OpenNode API Key";
 String currency = "USD";
 
 //For RaspiBlitz
