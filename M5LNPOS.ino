@@ -5,9 +5,10 @@
 #include <HTTPClient.h>
 #include <math.h>
 
+String currency = "USD";
+
 // For OpenNode
 String ONApiKey = "OpenNode API Key";
-String currency = "USD";
 
 //For RaspiBlitz
 String readmacaroon = "Raspiblitz Read Only Macaroon";
@@ -111,7 +112,7 @@ void checkONInvoiceStatus(String invoiceId) {
 }
 
 void raspiBlitzInvoice() {
-  double amount = ez.textInput().toDouble();
+  double amount = ez.textInput(currency, "0.10").toDouble();
   float rate = getConversionRate();
   int amount2 = amount * rate * 100000000;
   String memo = "Memo " + String(random(1,1000)); //memo suffix, followed by the price then a random number
@@ -191,6 +192,11 @@ float getConversionRate() {
   JsonObject data = doc["data"];
 
   String pair = "BTC" + currency;
-  return data[pair]["BTC"];
+  float n = 1.00;
+  float d = data[pair][currency];
+  float exchangeRate = 0.00;
+  exchangeRate = n / d;
+  //return data[pair]["BTC"];
+  return exchangeRate;
   client.end();
 }
