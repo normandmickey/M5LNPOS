@@ -6,7 +6,7 @@
 #include <math.h>
 
 // For OpenNode
-String ONApiKey = "OpenNode API Key";
+String ONApiKey = "046ef527-db76-47da-ab5b-b3ce2e64996c";
 String currency = "USD";
 
 //For RaspiBlitz
@@ -111,7 +111,9 @@ void checkONInvoiceStatus(String invoiceId) {
 }
 
 void raspiBlitzInvoice() {
-  String amount = ez.textInput();
+  double amount = ez.textInput().toDouble();
+  float rate = getConversionRate();
+  int amount2 = amount * rate * 100000000;
   String memo = "Memo " + String(random(1,1000)); //memo suffix, followed by the price then a random number
     
   HTTPClient client;
@@ -119,7 +121,7 @@ void raspiBlitzInvoice() {
   client.begin(invoiceURL, test_root_fingerprint);
   client.addHeader("Content-Type", "application/json");
   client.addHeader("Grpc-Metadata-macaroon", invoicemacaroon);
-  String jsonPost = "{\"value\":\"" + amount + "\",\"memo\":" + "\"" + memo + "\"" + ",\"expiry\":\"1000\"}";
+  String jsonPost = "{\"value\":\"" + String(amount2) + "\",\"memo\":" + "\"" + memo + "\"" + ",\"expiry\":\"1000\"}";
   int httpCode = client.POST(jsonPost);
   if (httpCode >0) {  
     const size_t capacity = JSON_OBJECT_SIZE(3) + 320;
@@ -128,7 +130,6 @@ void raspiBlitzInvoice() {
    
   const char* payment_request = doc["payment_request"];
   String payreq = payment_request;
-  Serial.println(payreq);
   
   ez.screen.clear();
   M5.begin();
@@ -175,5 +176,21 @@ String getHash(String invoiceId) {
   deserializeJson(doc, client.getString());
   String blitzPaymentHash = doc["payment_hash"];
   return blitzPaymentHash;
+  client.end();
+}
+
+float getConversionRate() {
+  HTTPClient client;
+  client.begin("https://api.opennode.co/v1/rates");
+  client.addHeader("Content-Type", "application/json");
+  client.addHeader("Authorization", ONApiKey);
+  const size_t capacity = 162*JSON_OBJECT_SIZE(1) + 8*JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(169) + 2110;
+  DynamicJsonDocument doc(capacity);  
+  int httpCode = client.GET();
+  deserializeJson(doc, client.getString());
+  JsonObject data = doc["data"];
+
+  String pair = "BTC" + currency;
+  return data[pair]["BTC"];
   client.end();
 }
