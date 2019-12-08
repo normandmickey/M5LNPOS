@@ -167,7 +167,7 @@ void raspiBlitzInvoice() {
     ez.screen.clear();
     M5.begin();
     M5.Lcd.qrcode(payreq, 45, 0, 240, 10);
-    delay(20000);
+    delay(5000);
     checkBlitzInvoiceStatus(payreq);
   }
   client.end();
