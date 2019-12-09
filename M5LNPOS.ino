@@ -30,7 +30,7 @@ unsigned long currenttime = 2000;
 const char* gifthost = "api.lightning.gifts";
 const int httpsPort = 443;
 
-const char* lndhost = "Zap Hostname"; //in terminal run ssh -R SOME-NAME.serveo.net:3010:localhost:8180 serveo.net
+const char* lndhost = "Zap Hostname"; //in terminal run "ngrok http https://localhost:8180"
 String adminmacaroon = "Zap LND Admin Macaroon";
 
 
